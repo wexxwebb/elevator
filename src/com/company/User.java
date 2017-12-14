@@ -7,11 +7,13 @@ public class User implements Runnable {
     private Elevator lift;
     private Thread thread;
     private Random random;
+    private String username;
 
-    public User(Elevator lift) {
+    public User(Elevator lift, String username, int seed) {
         this.lift = lift;
+        this.username = username;
         thread = new Thread(this);
-        random = new Random(42);
+        random = new Random();
         thread.start();
     }
 
@@ -20,11 +22,10 @@ public class User implements Runnable {
         int userLevel = random.nextInt(lift.getLevelsAmount() + 1);
         while (true) {
             synchronized (lift.getMonitor()) {
-                lift.callLift(userLevel, Thread.currentThread().getName());
+                lift.callLift(userLevel, username);
                 try {
                     int targetLevel = random.nextInt(lift.getLevelsAmount() + 1);
-                    lift.getMonitor().wait();
-                    lift.sendToTarget(targetLevel, Thread.currentThread().getName());
+                    lift.sendToTarget(targetLevel, username);
                     lift.getMonitor().wait();
                     userLevel = targetLevel;
                 } catch (InterruptedException e) {
@@ -32,7 +33,7 @@ public class User implements Runnable {
                 }
             }
             try {
-                Thread.sleep(15000);
+                Thread.sleep(20000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

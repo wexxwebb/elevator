@@ -13,7 +13,7 @@ public class Lift implements Runnable, Elevator {
     @Override
     public void callLift(int callLevel, String username) {
         try {
-            getQueue().put(new Task(callLevel, username));
+            getQueue().put(new Task(callLevel, username, TaskType.CALL));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -22,7 +22,7 @@ public class Lift implements Runnable, Elevator {
     @Override
     public void sendToTarget(int targetLevel, String username) {
         try {
-            getQueue().put(new Task(targetLevel, username));
+            getQueue().put(new Task(targetLevel, username, TaskType.TARGET));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -33,28 +33,23 @@ public class Lift implements Runnable, Elevator {
         return queue;
     }
 
+    private enum TaskType {
+        CALL, TARGET
+    }
+
     private class Task {
-        private boolean done;
         private int target;
         private String username;
+        private TaskType type;
 
-        public void setDone(boolean done) {
-            this.done = done;
-        }
-
-        private boolean isDone() {
-            return done;
-        }
-
-        private Task(int target, String username) {
-            this.done = false;
+        private Task(int target, String username, TaskType type) {
             this.target = target;
             this.username = username;
+            this.type = type;
         }
 
         private Task() {
             this.target = 1;
-            this.done = true;
         }
     }
 
@@ -78,18 +73,20 @@ public class Lift implements Runnable, Elevator {
     }
 
     private void getTask() {
-        if (task.isDone() && queue.peek() != null) {
+        if (task.target == level && queue.peek() != null) {
             task = (Task) queue.poll();
         }
+        if (task.target == level) queue.notify();
     }
 
     private boolean checkTarget() {
+        final String ANSI_RED = "\u001B[31m";
+        final String ANSI_RESET = "\u001B[0m";
         if (level == task.target) {
-            System.out.println("Lift STOP on level " + level + " (" + task.username + ")");
-            task.setDone(true);
+            System.out.println(ANSI_RED + "Lift STOP on level " + level + " (" + task.username + ", " + task.type + ")" + ANSI_RESET);
             return true;
         } else {
-            System.out.println("Lift on level " + level + " (" + task.username + ")");
+            System.out.println("Lift on level " + level + " (" + task.username + ", " + task.type + ")");
             return false;
         }
     }
@@ -98,19 +95,19 @@ public class Lift implements Runnable, Elevator {
     public void run() {
         while (true) {
             try {
-                Thread.sleep(100);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             synchronized (queue) {
-                if (!task.isDone()) {
+                if (task.target != level) {
                     if (level < task.target) {
                         level++;
                     }
                     if (level > task.target) {
                         level--;
                     }
-                    if (checkTarget()) queue.notifyAll();
+                    if (checkTarget()) queue.notify();
                 } else {
                     getTask();
                 }
