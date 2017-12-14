@@ -6,6 +6,11 @@ import java.util.concurrent.BlockingQueue;
 public class Lift implements Runnable, Elevator {
 
     @Override
+    public int getLevelsAmount() {
+        return LEVELS_AMOUNT;
+    }
+
+    @Override
     public void callLift(int callLevel, String username) {
         try {
             getQueue().put(new Task(callLevel, username));
@@ -56,11 +61,13 @@ public class Lift implements Runnable, Elevator {
     private Task task;
     private BlockingQueue queue;
     private volatile int level;
+    private final int LEVELS_AMOUNT;
 
-    public Lift() {
+    public Lift(int levelsAmount) {
         this.task = new Task();
         this.queue = new ArrayBlockingQueue(100);
         this.level = 1;
+        this.LEVELS_AMOUNT = levelsAmount;
         checkTarget();
         Thread thread = new Thread(this);
         thread.start();
@@ -74,14 +81,6 @@ public class Lift implements Runnable, Elevator {
         if (task.isDone() && queue.peek() != null) {
             task = (Task) queue.poll();
         }
-    }
-
-    private void upLift() {
-        level++;
-    }
-
-    private void downLift() {
-        level--;
     }
 
     private boolean checkTarget() {
@@ -106,10 +105,10 @@ public class Lift implements Runnable, Elevator {
             synchronized (queue) {
                 if (!task.isDone()) {
                     if (level < task.target) {
-                        upLift();
+                        level++;
                     }
                     if (level > task.target) {
-                        downLift();
+                        level--;
                     }
                     if (checkTarget()) queue.notifyAll();
                 } else {
