@@ -7,7 +7,7 @@ public class Lift implements Runnable, Elevator {
 
     @Override
     public int getLevelsAmount() {
-        return LEVELS_AMOUNT;
+        return levelsAmount;
     }
 
     @Override
@@ -56,13 +56,13 @@ public class Lift implements Runnable, Elevator {
     private Task task;
     private BlockingQueue queue;
     private volatile int level;
-    private final int LEVELS_AMOUNT;
+    private int levelsAmount;
 
     public Lift(int levelsAmount) {
         this.task = new Task();
         this.queue = new ArrayBlockingQueue(100);
         this.level = 1;
-        this.LEVELS_AMOUNT = levelsAmount;
+        this.levelsAmount = levelsAmount;
         checkTarget();
         Thread thread = new Thread(this);
         thread.start();
